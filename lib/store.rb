@@ -28,4 +28,11 @@ class Store <Rufus::Tokyo::Table
     end
   end
 
+  def by_index(index)
+    comment = query { |q|
+      q.add "index", :numeq, index
+      q.limit 1
+    }.first
+  end
+
 end
