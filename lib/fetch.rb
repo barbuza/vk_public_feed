@@ -36,7 +36,9 @@ module Fetch
 
 
   def check_comment_text(text)
-    text.size > 2 && ! text =~ /https?:\/\//
+    return false if text.size <= 2
+    return false if text =~ /https?:\/\//
+    true
   end
 
 
