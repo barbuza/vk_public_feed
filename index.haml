@@ -1,0 +1,36 @@
+!!!
+%html
+  %head
+    :coffeescript
+      
+      current_page = 0
+      
+      el = (name, text, attrs) ->
+        node = document.createElement name
+        for attr, value of attrs
+          node.setAttribute attr, value
+        node.appendChild document.createTextNode text if text
+        node
+      
+      load_page = (page) ->
+        current_page = page
+        xmlhttp = new XMLHttpRequest
+        xmlhttp.open "GET", "pages/" + page + ".json", true
+        xmlhttp.onreadystatechange = ->
+          if xmlhttp.readyState is 4 and xmlhttp.status is 200
+            comments = document.getElementById "comments"
+            while comments.firstChild
+              comments.removeChild comments.firstChild
+            for data in eval(xmlhttp.responseText)
+              comment = el "div", false, class: "comment"
+              avatar = el "img", false, src: data.avatar
+              username = el "div", data.username, class: "username"
+              text = el "div", data.text, class: "Text"
+              comment.appendChild tag for tag in [avatar, username, text]
+              comments.appendChild comment
+        xmlhttp.send()
+      
+      setInterval (-> load_page(if current_page == 30 then 1 else current_page + 1) ), 1000
+
+  %body
+    #comments
