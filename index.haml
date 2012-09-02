@@ -15,7 +15,7 @@
       load_page = (page) ->
         current_page = page
         xmlhttp = new XMLHttpRequest
-        xmlhttp.open "GET", "pages/" + page + ".json", true
+        xmlhttp.open "GET", "/" + page + ".json", true
         xmlhttp.onreadystatechange = ->
           if xmlhttp.readyState is 4 and xmlhttp.status is 200
             comments = document.getElementById "comments"
