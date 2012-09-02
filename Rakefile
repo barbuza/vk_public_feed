@@ -22,3 +22,22 @@ namespace :vk do
   end
 
 end
+
+namespace :db do
+
+  desc "clean old comments"
+  task :cleanup do
+    limit = 10000
+    CONFIG.groups.each do |group|
+      Store.open(group) do |db|
+        if db.size > limit
+          max_index = db.max_index - limit
+          db.query{ |q| q.add "index", :le, max_index }.each do |rec|
+            db.delete rec[:pk]
+          end
+        end
+      end
+    end
+  end
+
+end

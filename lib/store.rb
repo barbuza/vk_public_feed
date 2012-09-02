@@ -16,6 +16,18 @@ class Store <Rufus::Tokyo::Table
     super "#{File.dirname File.expand_path __FILE__}/../db/#{name}.tdb"
   end
 
+  def min_index
+    min_index = query{ |q|
+      q.order_by "index", :numasc
+      q.limit 1
+    }.first
+    if min_index
+      min_index["index"].to_i
+    else
+      0
+    end
+  end
+
   def max_index
     max_index = query{ |q| 
       q.order_by "index", :numdesc

@@ -44,7 +44,7 @@ module Build
       while comments.size < total
         db = dbs.sample
         next if db.size == 0
-        comment = db.by_index(rand(db.size) + 1)
+        comment = db.by_index(db.min_index + rand(db.size))
         comments << comment if comment and not comments.find{ |c| c[:pk] == comment[:pk] }
       end
       comments.shuffle!
