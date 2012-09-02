@@ -38,28 +38,32 @@ module Build
   def seed_random_pages
     total = CONFIG.random_pages * CONFIG.per_page
     dbs = CONFIG.groups.collect{ |group| Store.new group }
-    comments = []
-    puts "collecting comments"
-    while comments.size < total
-      db = dbs.sample
-      next if db.size == 0
-      comment = db.by_index(rand(db.size) + 1)
-      comments << comment if comment and not comments.find{ |c| c[:pk] == comment[:pk] }
-    end
-    comments.shuffle!
-    comments.each do |c|
-      c.delete :pk
-      c.delete "index"
-      c.each_pair do |k,v|
-        c[k] = v.force_encoding "UTF-8"
+    begin
+      comments = []
+      puts "collecting comments"
+      while comments.size < total
+        db = dbs.sample
+        next if db.size == 0
+        comment = db.by_index(rand(db.size) + 1)
+        comments << comment if comment and not comments.find{ |c| c[:pk] == comment[:pk] }
       end
-    end
-    puts "creating json files"
-    (1..CONFIG.random_pages).each do |page|
-      open("tmp.json", "w") do |f|
-        f << JSON.dump(comments.slice((page - 1) * CONFIG.per_page, CONFIG.per_page))
+      comments.shuffle!
+      comments.each do |c|
+        c.delete :pk
+        c.delete "index"
+        c.each_pair do |k,v|
+          c[k] = v.force_encoding "UTF-8"
+        end
       end
-      File.rename "tmp.json", "#{File.dirname File.expand_path __FILE__}/../public/#{page}.json"
+      puts "creating json files"
+      (1..CONFIG.random_pages).each do |page|
+        open("tmp.json", "w") do |f|
+          f << JSON.dump(comments.slice((page - 1) * CONFIG.per_page, CONFIG.per_page))
+        end
+        File.rename "tmp.json", "#{File.dirname File.expand_path __FILE__}/../public/#{page}.json"
+      end
+    ensure
+      dbs.each &:close
     end
   end
 
