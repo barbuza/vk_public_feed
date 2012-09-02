@@ -2,16 +2,13 @@
 %html
   %head
     :coffeescript
-      
       current_page = 0
-      
       el = (name, text, attrs) ->
         node = document.createElement name
         for attr, value of attrs
           node.setAttribute attr, value
         node.appendChild document.createTextNode text if text
         node
-      
       load_page = (page) ->
         current_page = page
         xmlhttp = new XMLHttpRequest
@@ -29,8 +26,6 @@
               comment.appendChild tag for tag in [avatar, username, text]
               comments.appendChild comment
         xmlhttp.send()
-      
       setInterval (-> load_page(if current_page == 30 then 1 else current_page + 1) ), 1000
-
   %body
     #comments
