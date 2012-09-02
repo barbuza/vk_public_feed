@@ -1,5 +1,6 @@
 source :rubygems
 
+gem "therubyracer", require: "v8"
 gem "rake"
 gem "haml"
 gem "coffee-script"
