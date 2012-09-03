@@ -83,8 +83,6 @@ module Fetch
           puts "failure: #{error}"
         end
       end
-    end
+    end   
   end
-
-
 end

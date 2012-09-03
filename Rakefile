@@ -1,5 +1,6 @@
 require_relative "./lib/fetch.rb"
 require_relative "./lib/build.rb"
+require_relative "./lib/config.rb"
 
 include Fetch
 include Build
@@ -8,7 +9,7 @@ namespace :vk do
 
   desc "fetch comments from vk"
   task :fetch do
-    CONFIG.groups.each{ |group| collect_comments group }
+    Cfg.groups.each{ |group| collect_comments group }
   end
 
   desc "create json files with random comments"
@@ -23,7 +24,7 @@ namespace :db do
   desc "clean old comments"
   task :cleanup do
     limit = 10000
-    CONFIG.groups.each do |group|
+    Cfg.groups.each do |group|
       Store.open(group) do |db|
         if db.size > limit
           max_index = db.max_index - limit

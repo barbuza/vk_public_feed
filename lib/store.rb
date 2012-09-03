@@ -1,6 +1,24 @@
 require "rufus/tokyo"
 
 
+class Rufus::Tokyo::TableQuery
+
+  def exclude_texts(texts)
+    texts.each{ |text| add "text", :eq, text, false }
+  end
+
+  def exclude_indicies(indicies)
+    indicies.each{ |ind| add "index", :numeq, ind, false }
+  end
+
+  def first_by(index)
+    asc = rand(2) == 1
+    add "index", asc ? :numge : :numle, index
+    order_by "index", asc ? :numasc : :numdesc
+  end
+
+end
+
 class Store <Rufus::Tokyo::Table
 
   def self.open(name)
@@ -29,7 +47,7 @@ class Store <Rufus::Tokyo::Table
   end
 
   def max_index
-    max_index = query{ |q| 
+    max_index = query{ |q|
       q.order_by "index", :numdesc
       q.limit 1
     }.first

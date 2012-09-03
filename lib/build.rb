@@ -2,8 +2,6 @@ require "json"
 require_relative "./config.rb"
 require_relative "./store.rb"
 
-KEEP_KEYS = %w(username avatar text)
-
 
 class Hash
 
@@ -19,55 +17,43 @@ class Hash
 end
 
 
-class Rufus::Tokyo::TableQuery
-
-  def exclude_texts(texts)
-    texts.each{ |text| add "text", :eq, text, false }
-  end
-
-  def exclude_indicies(indicies)
-    indicies.each{ |ind| add "index", :numeq, ind, false }
-  end
-
-end
-
-
 module Build
 
   def seed_random_pages
-    dbs = CONFIG.groups.collect{ |group| Store.new group }.reject{ |db| db.size == 0 }
+    dbs = Cfg.groups.collect{ |group| Store.new group }.reject{ |db| db.size == 0 }
     begin
       indicies = Hash[dbs.collect{ |db| [db, []] }]
       texts = Hash[dbs.collect{ |db| [db, []] }]
       puts "collecting comments"
-      (1..CONFIG.random_pages).each do |page|
+      misses = 0
+      (1..Cfg.random_pages).each do |page|
         puts "page #{page}"
         comments = []
         big = 0
         middle = 0
-        while comments.size < CONFIG.per_page
+        while comments.size < Cfg.per_page
           db = dbs.sample
           index = nil
+          size = db.size
+          min_index = db.min_index
           while not index or indicies[db].include? index
-            index = db.min_index + rand(db.size)
+            index = min_index + rand(size)
           end
           if big < 3
             comment = db.query{ |q|
               q.exclude_indicies indicies[db]
               q.exclude_texts texts[db]
               q.add "length", :numgt, 100
-              q.add "index", :numgt, index
-              q.order_by "index", :numasc
+              q.first_by index
             }.first
-            big += 1 if comment 
+            big += 1 if comment
           elsif middle < 3
             comment = db.query{ |q|
               q.exclude_indicies indicies[db]
               q.exclude_texts texts[db]
               q.add "length", :numgt, 45
               q.add "length", :numle, 100
-              q.add "index", :numgt, index
-              q.order_by "index", :numasc
+              q.first_by index
             }.first
             middle += 1 if comment
           else
@@ -75,8 +61,7 @@ module Build
               q.exclude_indicies indicies[db]
               q.exclude_texts texts[db]
               q.add "length", :numle, 45
-              q.add "index", :numgt, index
-              q.order_by "index", :numasc
+              q.first_by index
             }.first
           end
           if comment
@@ -84,6 +69,8 @@ module Build
             comments << comment_data
             indicies[db] << index
             texts[db] << comment_data["text"]
+          else
+            misses += 1
           end
         end
         open("tmp.json", "w") do |f|
@@ -91,6 +78,7 @@ module Build
         end
         File.rename "tmp.json", "#{File.dirname File.expand_path __FILE__}/../viewer/build/pages/#{page}.json"
       end
+      puts "miss rate #{100 * misses / (Cfg.random_pages * Cfg.per_page)}%"
     ensure
       dbs.each &:close
     end
