@@ -41,7 +41,8 @@ move = (tag, to) ->
 update_comment = (comment, data, invert=false) ->
   set_text (child comment, "text"), data.text
   set_text (child comment, "username"), data.username
-  comment.setAttribute "class", if invert then "invert" else ""
+  comment.className = if invert then "invert" else ""
+  comment.style.backgroundImage = "url(#{data.avatar})"
   delay 0, ->
     if comment.offsetTop > 512
       row = 3

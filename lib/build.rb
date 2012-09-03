@@ -24,7 +24,8 @@ module Build
   def seed_random_pages
     dbs = CONFIG.groups.collect{ |group| Store.new group }.reject{ |db| db.size == 0 }
     begin
-      all = []
+      indicies = Hash[dbs.collect{ |db| [db, []] }]
+      texts = Hash[dbs.collect{ |db| [db, []] }]
       puts "collecting comments"
       (1..CONFIG.random_pages).each do |page|
         puts "page #{page}"
@@ -33,27 +34,34 @@ module Build
         middle = 0
         while comments.size < CONFIG.per_page
           db = dbs.sample
-          index = db.min_index + rand(db.size)
+          index = nil
+          while not index or indicies[db].include? index
+            index = db.min_index + rand(db.size)
+          end
           if big < 3
             comment = db.query{ |q|
+              indicies[db].each{ |ind| q.add "index", :numeq, ind, false }
+              texts[db].each{ |text| q.add "text", :eq, text, false} 
               q.add "length", :numgt, 100
               q.add "index", :numgt, index
               q.order_by "index", :numasc
             }.first
-            big += 1 if comment and not all.include? comment[:pk]
+            big += 1 if comment 
           elsif middle < 3
             comment = db.query{ |q|
-              q.add "length", :numgt, 60
+              q.add "length", :numgt, 45
               q.add "index", :numgt, index
               q.order_by "index", :numasc
             }.first
-            middle += 1 if comment and not all.include? comment[:pk]            
+            middle += 1 if comment
           else
             comment  = db.by_index index
           end
-          if comment and not all.include? comment[:pk]
-            comments << comment.hash_with(%w{username avatar text}).force_unicode
-            all << comment[:pk]
+          if comment
+            comment_data = comment.hash_with(%w{username avatar text}).force_unicode
+            comments << comment_data
+            indicies[db] << index
+            texts[db] << comment_data["text"]
           end
         end
         open("tmp.json", "w") do |f|
