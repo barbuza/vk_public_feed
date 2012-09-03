@@ -1,66 +1,65 @@
-require "haml"
-require "uglifier"
-require "coffee-script"
 require "json"
 require_relative "./config.rb"
 require_relative "./store.rb"
 
+KEEP_KEYS = %w(username avatar text)
 
-module Coffee
-  module Filter
-    module Coffeescript
-      include ::Haml::Filters::Base
 
-      def render_with_options(text, options)
-        <<END
-<script type=#{options[:attr_wrapper]}text/javascript#{options[:attr_wrapper]}>
-  //<![CDATA[
-    #{Uglifier.compile CoffeeScript.compile text}
-  //]]>
-</script>
-END
-      end
-    end
+class Hash
+
+  def hash_with(keys)
+    Hash[keys.zip values_at(*keys)]
   end
+
+  def force_unicode()
+    k = keys
+    Hash[k.zip values_at(*k).collect{ |v| v.force_encoding "UTF-8"}]
+  end
+
 end
 
 
 module Build
 
-  def build_public_files
-    puts "building index.html"
-    open("#{File.dirname File.expand_path __FILE__}/../public/index.html", "w") do |index|
-      engine = Haml::Engine.new open("#{File.dirname File.expand_path __FILE__}/../index.haml").read
-      index << engine.render
-    end
-  end
-
   def seed_random_pages
-    total = CONFIG.random_pages * CONFIG.per_page
-    dbs = CONFIG.groups.collect{ |group| Store.new group }
+    dbs = CONFIG.groups.collect{ |group| Store.new group }.reject{ |db| db.size == 0 }
     begin
-      comments = []
+      all = []
       puts "collecting comments"
-      while comments.size < total
-        db = dbs.sample
-        next if db.size == 0
-        comment = db.by_index(db.min_index + rand(db.size))
-        comments << comment if comment and not comments.find{ |c| c[:pk] == comment[:pk] }
-      end
-      comments.shuffle!
-      comments.each do |c|
-        c.delete :pk
-        c.delete "index"
-        c.each_pair do |k,v|
-          c[k] = v.force_encoding "UTF-8"
-        end
-      end
-      puts "creating json files"
       (1..CONFIG.random_pages).each do |page|
-        open("tmp.json", "w") do |f|
-          f << JSON.dump(comments.slice((page - 1) * CONFIG.per_page, CONFIG.per_page))
+        puts "page #{page}"
+        comments = []
+        big = 0
+        middle = 0
+        while comments.size < CONFIG.per_page
+          db = dbs.sample
+          index = db.min_index + rand(db.size)
+          if big < 3
+            comment = db.query{ |q|
+              q.add "length", :numgt, 100
+              q.add "index", :numgt, index
+              q.order_by "index", :numasc
+            }.first
+            big += 1 if comment and not all.include? comment[:pk]
+          elsif middle < 3
+            comment = db.query{ |q|
+              q.add "length", :numgt, 60
+              q.add "index", :numgt, index
+              q.order_by "index", :numasc
+            }.first
+            middle += 1 if comment and not all.include? comment[:pk]            
+          else
+            comment  = db.by_index index
+          end
+          if comment and not all.include? comment[:pk]
+            comments << comment.hash_with(%w{username avatar text}).force_unicode
+            all << comment[:pk]
+          end
         end
-        File.rename "tmp.json", "#{File.dirname File.expand_path __FILE__}/../public/#{page}.json"
+        open("tmp.json", "w") do |f|
+          f << JSON.dump(comments)
+        end
+        File.rename "tmp.json", "#{File.dirname File.expand_path __FILE__}/../viewer/build/pages/#{page}.json"
       end
     ensure
       dbs.each &:close

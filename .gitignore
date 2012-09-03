@@ -1,3 +1,5 @@
+.DS_Store
+*~
+/viewer/build
+/viewer/source/pages
 /db/*.tdb
-/public/index.html
-/public/*.json

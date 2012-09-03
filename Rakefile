@@ -16,11 +16,6 @@ namespace :vk do
     seed_random_pages
   end
 
-  desc "create public files"
-  task :build do
-    build_public_files
-  end
-
 end
 
 namespace :db do

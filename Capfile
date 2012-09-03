@@ -7,7 +7,7 @@ role :web, "sparta"
 
 desc "update code and rebuild public files"
 task :deploy do
-  run "cd /home/barbuza/django/vk-feed && git pull && bundle install && bundle exec rake vk:build"
+  run "cd /home/barbuza/django/vk-feed && git pull && bundle install && cd viewer && bundle install && bundle exec middleman build"
 end
 
 desc "fetch new data from vk and make seeds"
@@ -19,3 +19,4 @@ desc "cleanup database"
 task :cleanup do
   run "cd /home/barbuza/django/vk-feed && bundle exec rake db:cleanup"
 end
+

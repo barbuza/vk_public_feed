@@ -68,8 +68,9 @@ module Fetch
               unless db[comment_id]
                 if check_comment_text text
                   max_index += 1
-                  db[comment_id] = {avatar: avatar, username: username, text: text, index: max_index}
-                  added += 1                  
+                  db[comment_id] = {avatar: avatar, username: username, text: text,
+                                    index: max_index, length: text.size}
+                  added += 1
                 end
               else
                 comments = false

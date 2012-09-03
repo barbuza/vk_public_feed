@@ -1,0 +1,5 @@
+source :rubygems
+
+gem "therubyracer", require: "v8"
+gem "coffee-filter"
+gem "middleman", "~>3.0.0"
