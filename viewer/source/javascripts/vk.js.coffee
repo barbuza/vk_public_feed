@@ -42,7 +42,9 @@ update_comment = (comment, data, invert=false) ->
   set_text (child comment, "text"), data.text
   set_text (child comment, "username"), data.username
   comment.className = if invert then "invert" else ""
-  comment.style.backgroundImage = "url(#{data.avatar})"
+  avatar = data.avatar
+  avatar = "http://vk.com#{avatar}" if avatar[0] is "/"
+  comment.style.backgroundImage = "url(#{avatar})"
   delay 0, ->
     if comment.offsetTop > 512
       row = 3
