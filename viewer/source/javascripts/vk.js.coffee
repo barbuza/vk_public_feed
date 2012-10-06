@@ -39,21 +39,25 @@ move = (tag, to) ->
       move tag, to
 
 update_comment = (comment, data, invert=false) ->
-  set_text (child comment, "text"), data.text
-  set_text (child comment, "username"), data.username
-  comment.className = if invert then "invert" else ""
   avatar = data.avatar
   avatar = "http://vk.com#{avatar}" if avatar[0] is "/"
-  comment.style.backgroundImage = "url(#{avatar})"
-  delay 0, ->
-    if comment.offsetTop > 512
-      row = 3
-    else if comment.offsetTop > 256
-      row = 2
-    else
-      row = 1
-    y = (row - 1) * 256 + 10 + Math.floor(Math.random() * (236 - comment.offsetHeight))
-    move comment, y
+  img = new Image
+  img.onload = ->
+    img.onload = null
+    set_text (child comment, "text"), data.text
+    set_text (child comment, "username"), data.username
+    comment.className = if invert then "invert" else ""
+    comment.style.backgroundImage = "url(#{avatar})"
+    delay 0, ->
+      if comment.offsetTop > 512
+        row = 3
+      else if comment.offsetTop > 256
+        row = 2
+      else
+        row = 1
+      y = (row - 1) * 256 + 10 + Math.floor(Math.random() * (236 - comment.offsetHeight))
+      move comment, y
+  img.src = avatar
   null
 
 load_json = (url, cb) ->
