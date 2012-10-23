@@ -2,22 +2,27 @@ require "json"
 require_relative "./config.rb"
 require_relative "./store.rb"
 
-
-class Hash
-
-  def hash_with(keys)
-    Hash[keys.zip values_at(*keys)]
-  end
-
-  def force_unicode()
-    k = keys
-    Hash[k.zip values_at(*k).collect{ |v| v.force_encoding "UTF-8"}]
-  end
-
-end
-
-
 module Build
+
+  def mongo_seed_random_pages
+    MongoStore.open do |db|
+      puts "collecting comments"
+      short = db.random_by_length :short, Cfg.random_pages * 3
+      medium = db.random_by_length :medium, Cfg.random_pages * 3
+      long = db.random_by_length :long, Cfg.random_pages * 3
+      puts "filling pages"
+      (1..Cfg.random_pages).each_with_index do |page, index|
+        puts "page #{page}"
+        comments = short.slice(index * 3, 3) +
+                   medium.slice(index * 3, 3) +
+                   long.slice(index * 3, 3)
+        open("tmp.json", "w") do |f|
+          f << JSON.dump(comments)
+        end
+        File.rename "tmp.json", "#{File.dirname File.expand_path __FILE__}/../viewer/build/pages/#{page}.json"
+      end
+    end
+  end
 
   def seed_random_pages
     dbs = Cfg.groups.collect{ |group| Store.new group }.reject{ |db| db.size == 0 }

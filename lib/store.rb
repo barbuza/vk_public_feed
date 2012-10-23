@@ -1,5 +1,72 @@
 require "rufus/tokyo"
+require "mongo"
 
+
+class Hash
+
+  def hash_with(keys)
+    Hash[keys.zip values_at(*keys)]
+  end
+
+  def force_unicode()
+    k = keys
+    Hash[k.zip values_at(*k).collect{ |v| v.force_encoding "UTF-8"}]
+  end
+
+  def tokyo_to_mongo
+    unicode = force_unicode
+    {
+      _id: unicode[:pk],
+      username: unicode["username"],
+      text: unicode["text"],
+      avatar: unicode["avatar"],
+      length: unicode["length"].to_i
+    }
+  end
+
+end
+
+
+class MongoStore
+
+  def self.open
+    db = new
+    begin
+      yield db
+    ensure
+      db.close
+    end
+  end
+
+  def initialize
+    @conn = Mongo::Connection.new
+    @db = @conn.db "vk-feed"
+    @coll = @db.collection "posts"
+  end
+
+  def method_missing(meth, *args, &block)
+    @coll.public_send meth, *args, &block
+  end
+
+  def close
+    @conn.close
+  end
+
+  def random_by_length(len_type, count)
+    length = nil
+    if len_type == :short
+      length = {"$lt" => 45}
+    elsif len_type == :medium
+      length = {"$gt" => 45, "$lte" => 100}
+    elsif len_type == :long
+      length = {"$gte" => 100}
+    else
+      throw "unknown len type `#{len_type.inspect}`"
+    end
+    find(length: length).to_a.shuffle.slice(0, count)
+  end
+
+end
 
 class Rufus::Tokyo::TableQuery
 

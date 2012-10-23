@@ -43,8 +43,7 @@ module Fetch
 
 
   def collect_comments(group)
-    Store.open(group) do |db|
-      max_index = db.max_index
+    MongoStore.open do |db|
       collect_posts(group) do |post_url|
         begin
           comments = true
@@ -65,11 +64,10 @@ module Fetch
               rescue Exception => error
                 next
               end
-              unless db[comment_id]
+              if db.find({_id: comment_id}).count == 0
                 if check_comment_text text
-                  max_index += 1
-                  db[comment_id] = {avatar: avatar, username: username, text: text,
-                                    index: max_index, length: text.size}
+                  db.insert avatar: avatar, username: username, text:text,
+                            length: text.size, _id: comment_id
                   added += 1
                 end
               else
